@@ -31,10 +31,10 @@ export const resumes: Resume[] = [
         id: "1", // Company identifier for the resume
         companyName: "Google", // Company the resume was submitted to
         jobTitle: "Frontend Developer", // Role the candidate applied for
-        imagePath: "/images/resume-1.png", // Thumbnail image
+        imagePath: "public\\images\\resume_01.png", // Thumbnail image
         resumePath: "/resumes/resume-1.pdf", // Resume PDF path
         feedback: {
-            overallScore: 58,
+            overallScore: 88,
             ATS: {
                 score: 90,
                 tips: [],
@@ -61,10 +61,10 @@ export const resumes: Resume[] = [
         id: "2",
         companyName: "Microsoft",
         jobTitle: "Cloud Engineer",
-        imagePath: "/images/resume-2.png",
+        imagePath: "public\\images\\resume_02.png",
         resumePath: "/resumes/resume-2.pdf",
         feedback: {
-            overallScore: 50,
+            overallScore: 56,
             ATS: {
                 score: 90,
                 tips: [],
@@ -91,7 +91,7 @@ export const resumes: Resume[] = [
         id: "3",
         companyName: "Apple",
         jobTitle: "iOS Developer",
-        imagePath: "/images/resume-3.png",
+        imagePath: "public\\images\\resume-3.png",
         resumePath: "/resumes/resume-3.pdf",
         feedback: {
             overallScore: 50,
