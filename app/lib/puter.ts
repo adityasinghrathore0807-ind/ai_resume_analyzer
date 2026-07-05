@@ -1,3 +1,4 @@
+import { setDefaultResultOrder } from "dns";
 import { create } from "zustand";
 
 // ==============================
@@ -156,7 +157,9 @@ interface PuterStore {
 // ==============================
 
 export const usePuterStore = create<PuterStore>((set, get) => {
-    // Helper: Set error and reset auth state
+    // ---------------------------------
+    // Helper: Set error and reset auth
+    // ---------------------------------
     const setError = (msg: string) => {
         set({
             error: msg,
@@ -174,6 +177,7 @@ export const usePuterStore = create<PuterStore>((set, get) => {
     };
 
     return {
+        // Initial store state
         error: null,
         isLoading: false,
 
@@ -181,16 +185,225 @@ export const usePuterStore = create<PuterStore>((set, get) => {
             user: null,
             isAuthenticated: false,
 
-            signIn: async () => { },
+            // ============================
+            // Sign In
+            // ============================
+            signIn: async () => {
+                const puter = getPuter();
 
-            signOut: async () => { },
+                if (!puter) {
+                    setError("Puter.js not available");
+                    return;
+                }
 
-            refreshUser: async () => { },
+                set({
+                    isLoading: true,
+                    error: null,
+                });
 
-            checkAuthStatus: async () => { },
+                try {
+                    await puter.auth.signIn();
 
-            getUser: async () => null,
+                    // Refresh auth state
+                    await get().auth.checkAuthStatus();
+                } catch (err) {
+                    const msg =
+                        err instanceof Error
+                            ? err.message
+                            : "Sign In Failed";
+
+                    setError(msg);
+                }
+            },
+
+            // ============================
+            // Sign Out
+            // ============================
+            signOut: async () => {
+                const puter = getPuter();
+
+                if (!puter) {
+                    setError("Puter.js not available");
+                    return;
+                }
+
+                set({
+                    isLoading: true,
+                    error: null,
+                });
+
+                try {
+                    await puter.auth.signOut();
+
+                    set({
+                        auth: {
+                            user: null,
+                            isAuthenticated: false,
+                            signIn: get().auth.signIn,
+                            signOut: get().auth.signOut,
+                            refreshUser: get().auth.refreshUser,
+                            checkAuthStatus: get().auth.checkAuthStatus,
+                            getUser: get().auth.getUser,
+                        },
+                        isLoading: false,
+                    });
+                } catch (err) {
+                    const msg =
+                        err instanceof Error
+                            ? err.message
+                            : "Sign Out Failed";
+
+                    setError(msg);
+                }
+            },
+
+            // ============================
+            // Refresh Current User
+            // ============================
+            refreshUser: async () => {
+                const puter = getPuter();
+
+                if (!puter) {
+                    setError("Puter.js not available");
+                    return;
+                }
+
+                set({
+                    isLoading: true,
+                    error: null,
+                });
+
+                try {
+                    const user = await puter.auth.getUser();
+
+                    set({
+                        auth: {
+                            user,
+                            isAuthenticated: true,
+                            signIn: get().auth.signIn,
+                            signOut: get().auth.signOut,
+                            refreshUser: get().auth.refreshUser,
+                            checkAuthStatus: get().auth.checkAuthStatus,
+                            getUser: get().auth.getUser,
+                        },
+                        isLoading: false,
+                    });
+                } catch (err) {
+                    const msg =
+                        err instanceof Error
+                            ? err.message
+                            : "Failed to Refresh User";
+
+                    setError(msg);
+                }
+            },
+
+            // ============================
+            // Check Authentication Status
+            // ============================
+            checkAuthStatus: async () => {
+                const puter = getPuter();
+
+                if (!puter) {
+                    setError("Puter.js not available");
+                    return;
+                }
+
+                set({
+                    isLoading: true,
+                    error: null,
+                });
+
+                try {
+                    const isSignedIn = await puter.auth.isSignedIn();
+
+                    if (isSignedIn) {
+                        const user = await puter.auth.getUser();
+
+                        set({
+                            auth: {
+                                user,
+                                isAuthenticated: true,
+                                signIn: get().auth.signIn,
+                                signOut: get().auth.signOut,
+                                refreshUser: get().auth.refreshUser,
+                                checkAuthStatus: get().auth.checkAuthStatus,
+                                getUser: get().auth.getUser,
+                            },
+                            isLoading: false,
+                        });
+
+                        return;
+                    }
+
+                    set({
+                        auth: {
+                            user: null,
+                            isAuthenticated: false,
+                            signIn: get().auth.signIn,
+                            signOut: get().auth.signOut,
+                            refreshUser: get().auth.refreshUser,
+                            checkAuthStatus: get().auth.checkAuthStatus,
+                            getUser: get().auth.getUser,
+                        },
+                        isLoading: false,
+                    });
+                } catch (err) {
+                    const msg =
+                        err instanceof Error
+                            ? err.message
+                            : "Failed to check auth status";
+
+                    setError(msg);
+                }
+            },
+
+            // ============================
+            // Get Current User
+            // ============================
+            getUser: async () => {
+                const puter = getPuter();
+
+                if (!puter) return null;
+
+                return await puter.auth.getUser();
+            },
         },
     };
 });
+// ==============================
+// Initialize Puter.js
+// Wait until Puter.js is available
+// Timeout after 10 seconds
+// ==============================
 
+const init = (): void => {
+    // If Puter.js is already loaded
+    if (getPuter()) {
+        set({ puterReady: true });
+        get().auth.checkAuthStatus();
+        return;
+    }
+
+    // Check every 100ms until Puter.js loads
+    const interval = setInterval(() => {
+        if (getPuter()) {
+            clearInterval(interval);
+
+            set({
+                puterReady: true,
+            });
+
+            get().auth.checkAuthStatus();
+        }
+    }, 100);
+
+    // Stop checking after 10 seconds
+    setTimeout(() => {
+        clearInterval(interval);
+
+        if (!getPuter()) {
+            setError("Puter.js failed to load within 10 seconds");
+        }
+    }, 10000);
+};
