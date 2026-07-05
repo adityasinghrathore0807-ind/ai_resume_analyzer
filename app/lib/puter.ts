@@ -1,4 +1,5 @@
 import { setDefaultResultOrder } from "dns";
+import { inherits } from "util";
 import { create } from "zustand";
 
 // ==============================
@@ -135,10 +136,12 @@ export const getPuter = () => {
 // ==============================
 // Zustand Store Types
 // ==============================
-
 interface PuterStore {
     error: string | null;
     isLoading: boolean;
+
+    // True when Puter.js has loaded
+    puterReady: boolean;
 
     auth: {
         user: PuterUser | null;
@@ -150,8 +153,10 @@ interface PuterStore {
         checkAuthStatus: () => Promise<void>;
         getUser: () => Promise<PuterUser | null>;
     };
-}
 
+    // Initialize Puter.js
+    init: () => void;
+}
 // ==============================
 // Zustand Store
 // ==============================
@@ -160,7 +165,7 @@ export const usePuterStore = create<PuterStore>((set, get) => {
     // ---------------------------------
     // Helper: Set error and reset auth
     // ---------------------------------
-    const setError = (msg: string) => {
+    function setError(msg: string) {
         set({
             error: msg,
             isLoading: false,
@@ -174,7 +179,7 @@ export const usePuterStore = create<PuterStore>((set, get) => {
                 getUser: get().auth.getUser,
             },
         });
-    };
+    }
 
     return {
         // Initial store state
@@ -369,41 +374,323 @@ export const usePuterStore = create<PuterStore>((set, get) => {
                 return await puter.auth.getUser();
             },
         },
+        puterReady: false,
+
+        // Initialize Puter.js
+        // This function waits until Puter.js
+        // has loaded before using it.
+        // If it loads successfully, we check
+        // the user's authentication status.
+        // If it doesn't load within 10 seconds,
+        // an error is displayed.
+        // ==============================
+        init: () => {
+
+            // ------------------------------
+            // Step 1: Check if Puter.js
+            // is already loaded.
+            // ------------------------------
+            if (getPuter()) {
+
+                // Mark Puter as ready
+                set({
+                    puterReady: true,
+                });
+
+                // Check whether the user
+                // is already signed in
+                get().auth.checkAuthStatus();
+
+                return;
+            }
+
+            // ------------------------------
+            // Step 2: If Puter isn't loaded,
+            // keep checking every 100ms.
+            // ------------------------------
+            const interval = setInterval(() => {
+
+                if (getPuter()) {
+
+                    // Stop checking
+                    clearInterval(interval);
+
+                    // Mark Puter as ready
+                    set({
+                        puterReady: true,
+                    });
+
+                    // Update authentication state
+                    get().auth.checkAuthStatus();
+                }
+
+            }, 100);
+
+            // ------------------------------
+            // Step 3: Stop checking after
+            // 10 seconds.
+            // ------------------------------
+            setTimeout(() => {
+
+                // Stop the interval
+                clearInterval(interval);
+
+                // If Puter still isn't loaded,
+                // show an error message.
+                if (!getPuter()) {
+
+                    setError(
+                        "Puter.js failed to load within 10 seconds"
+                    );
+                }
+
+            }, 10000);
+        },
     };
 });
-// ==============================
-// Initialize Puter.js
-// Wait until Puter.js is available
-// Timeout after 10 seconds
-// ==============================
 
-const init = (): void => {
-    // If Puter.js is already loaded
-    if (getPuter()) {
-        set({ puterReady: true });
-        get().auth.checkAuthStatus();
+// =======================================
+// Store Helper
+// =======================================
+
+const setPuterError = (msg: string) => {
+    usePuterStore.setState({
+        error: msg,
+        isLoading: false,
+    });
+};
+
+// =======================================
+// File System Actions
+// =======================================
+
+// Write a file
+const write = async (
+    path: string,
+    data: string | File | Blob
+): Promise<File | undefined> => {
+    const puter = getPuter();
+
+    if (!puter) {
+        setPuterError("Puter.js is not available");
+        return undefined;
+    }
+
+    return await puter.fs.write(path, data);
+};
+
+// =======================================
+// Read Directory
+// =======================================
+
+const readDir = async (
+    path: string
+): Promise<FSItem[] | undefined> => {
+    const puter = getPuter();
+
+    if (!puter) {
+        setPuterError("Puter.js is not available");
+        return undefined;
+    }
+
+    return await puter.fs.readdir(path);
+};
+
+// =======================================
+// Read File
+// =======================================
+
+const readFile = async (
+    path: string
+): Promise<Blob | undefined> => {
+    const puter = getPuter();
+
+    if (!puter) {
+        setPuterError("Puter.js is not available");
+        return undefined;
+    }
+
+    return await puter.fs.read(path);
+};
+
+// =======================================
+// Upload Files
+// =======================================
+
+const upload = async (
+    files: File[] | Blob[]
+): Promise<FSItem | undefined> => {
+    const puter = getPuter();
+
+    if (!puter) {
+        setPuterError("Puter.js is not available");
         return;
     }
 
-    // Check every 100ms until Puter.js loads
-    const interval = setInterval(() => {
-        if (getPuter()) {
-            clearInterval(interval);
+    return await puter.fs.upload(files);
+};
 
-            set({
-                puterReady: true,
-            });
+// =======================================
+// Delete File
+// =======================================
 
-            get().auth.checkAuthStatus();
+const deleteFile = async (
+    path: string
+): Promise<void> => {
+    const puter = getPuter();
+
+    if (!puter) {
+        setPuterError("Puter.js is not available");
+        return;
+    }
+
+    await puter.fs.delete(path);
+};// =======================================
+// AI Actions
+// =======================================
+
+// Chat with AI
+const chat = async (
+    prompt: string | ChatMessage[],
+    imageURL?: string,
+    testMode?: boolean,
+    options?: PuterChatOptions
+): Promise<AIResponse | undefined> => {
+    const puter = getPuter();
+
+    if (!puter) {
+        setPuterError("Puter.js is not available");
+        return undefined;
+    }
+
+    return await puter.ai.chat(
+        prompt,
+        imageURL,
+        testMode,
+        options
+    );
+};
+
+// =======================================
+// AI Feedback
+// =======================================
+
+const feedback = async (
+    path: string,
+    message: string
+): Promise<AIResponse | undefined> => {
+    const puter = getPuter();
+
+    if (!puter) {
+        setPuterError("Puter.js is not available");
+        return undefined;
+    }
+
+    return await puter.ai.chat(
+        [
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "file",
+                        puter_path: path,
+                    },
+                    {
+                        type: "text",
+                        text: message,
+                    },
+                ],
+            },
+        ],
+        undefined,
+        false,
+        {
+            model: "claude-sonnet-4",
         }
-    }, 100);
+    );
+};
 
-    // Stop checking after 10 seconds
-    setTimeout(() => {
-        clearInterval(interval);
+// =======================================
+// Image to Text
+// =======================================
 
-        if (!getPuter()) {
-            setError("Puter.js failed to load within 10 seconds");
-        }
-    }, 10000);
+const img2txt = async (
+    image: string | File | Blob,
+    testMode?: boolean
+): Promise<string | undefined> => {
+    const puter = getPuter();
+
+    if (!puter) {
+        setPuterError("Puter.js is not available");
+        return undefined;
+    }
+
+    return await puter.ai.img2txt(image, testMode);
+};
+
+// =======================================
+// Key-Value Store Actions
+// =======================================
+
+// Get
+const getKv = async (key: string) => {
+    const puter = getPuter();
+
+    if (!puter) {
+        setPuterError("Puter.js is not available");
+        return undefined;
+    }
+
+    return await puter.kv.get(key);
+};
+
+// Set
+const setKv = async (key: string, value: string) => {
+    const puter = getPuter();
+
+    if (!puter) {
+        setPuterError("Puter.js is not available");
+        return undefined;
+    }
+
+    return await puter.kv.set(key, value);
+};
+
+// Delete
+const deleteKv = async (key: string) => {
+    const puter = getPuter();
+
+    if (!puter) {
+        setPuterError("Puter.js is not available");
+        return undefined;
+    }
+
+    return await puter.kv.delete(key);
+};
+
+// List
+const listKv = async (
+    pattern: string,
+    returnValues = false
+) => {
+    const puter = getPuter();
+
+    if (!puter) {
+        setPuterError("Puter.js is not available");
+        return undefined;
+    }
+
+    return await puter.kv.list(pattern, returnValues);
+};
+
+// Flush
+const flushKv = async () => {
+    const puter = getPuter();
+
+    if (!puter) {
+        setPuterError("Puter.js is not available");
+        return undefined;
+    }
+
+    return await puter.kv.flush();
 };
