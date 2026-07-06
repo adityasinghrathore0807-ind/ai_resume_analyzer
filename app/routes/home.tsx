@@ -1,7 +1,10 @@
+import { useEffect } from "react";
 import type { Route } from "./+types/home";
 import Navbar from "../components/Navbar";
 import ResumeCard from "~/components/ResumeCard";
 import { resumes } from "../constants";
+import { usePuterStore } from "~/lib/puter";
+import { useLocation, useNavigate } from "react-router";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -14,6 +17,16 @@ export function meta({ }: Route.MetaArgs) {
 }
 
 export default function Home() {
+  const { isLoading, auth } = usePuterStore();
+      const location = useLocation();
+      const navigate = useNavigate();
+      const next = new URLSearchParams(location.search).get("next") ?? "/";
+
+      useEffect(() => {
+          if (!auth.isAuthenticated) {
+              navigate('/auth?next=/');
+          }
+      }, [auth.isAuthenticated, next, navigate]);
   return (
     <main
       className="relative min-h-screen bg-cover bg-center bg-no-repeat"
@@ -30,6 +43,7 @@ export default function Home() {
 
         <section className="px-6 pt-20 pb-20 md:pt-28">
           <div className="mx-auto max-w-6xl">
+
             {/* ================= Hero Section ================= */}
             <div className="text-center">
               <h1 className="text-5xl font-extrabold text-white md:text-7xl lg:text-8xl">

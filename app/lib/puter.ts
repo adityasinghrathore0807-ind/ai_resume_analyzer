@@ -1,5 +1,3 @@
-import { setDefaultResultOrder } from "dns";
-import { inherits } from "util";
 import { create } from "zustand";
 
 // ==============================
@@ -196,31 +194,44 @@ export const usePuterStore = create<PuterStore>((set, get) => {
             signIn: async () => {
                 const puter = getPuter();
 
+                // Check if Puter.js is loaded
                 if (!puter) {
                     setError("Puter.js not available");
                     return;
                 }
 
+                // Start loading
                 set({
                     isLoading: true,
                     error: null,
                 });
 
                 try {
+                    console.log("Starting Puter Sign In...");
+
+                    // Open Puter login popup
                     await puter.auth.signIn();
 
-                    // Refresh auth state
+                    console.log("Sign In successful");
+
+                    // Refresh authentication state
                     await get().auth.checkAuthStatus();
                 } catch (err) {
+                    console.error("Sign In Error:", err);
+
                     const msg =
                         err instanceof Error
                             ? err.message
                             : "Sign In Failed";
 
                     setError(msg);
+                } finally {
+                    // Stop loading
+                    set({
+                        isLoading: false,
+                    });
                 }
             },
-
             // ============================
             // Sign Out
             // ============================
