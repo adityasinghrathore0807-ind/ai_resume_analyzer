@@ -47,6 +47,7 @@ export default function Auth() {
 
                     <p className="mt-3 text-gray-500">
                         Log In to continue your AI Resume Journey
+
                     </p>
                 </div>
 
