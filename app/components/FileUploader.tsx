@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-
+import PdfIcon from "/icons/pdf.svg";
 interface FileUploaderProps {
     onFileSelect?: (file: File | null) => void;
 }
@@ -161,10 +161,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect }) => {
                 <div className="flex items-center justify-between rounded-xl border border-green-200 bg-green-50 p-4 shadow">
                     <div className="flex items-center gap-3">
                         <img
-                            src="public\icons\pdf.svg"
+                            src="/icons/pdf.svg"
                             alt="PDF"
                             className="h-10 w-10"
                         />
+                        
 
                         <div>
                             <p className="font-semibold">{file.name}</p>
