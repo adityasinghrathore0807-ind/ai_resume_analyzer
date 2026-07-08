@@ -1,7 +1,7 @@
 # Smart AI Resume Analyzer
-
-#     Screenshots:-
-
+``
+Screenshots:
+``
 | Login | Home |
 |-------|------|
 | <img src="public\assets\1.png" width="420"> | <img src="public\assets\2.png" width="420"> |
@@ -22,7 +22,7 @@ An AI-powered Resume Analyzer that evaluates resumes against job descriptions, g
 
 ##  Live Demo
 
-**Website:** https://airesumeanalyzerin.vercel.app/
+**Website:** https://airesumeanalyzer07.vercel.app
 
 ---
 
@@ -94,7 +94,7 @@ The application also allows users to download a professional PDF report.
 
 ---
 
-# 🛠 Tech Stack
+#  Tech Stack
 
 ## Frontend
 
