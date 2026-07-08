@@ -13,7 +13,7 @@ interface Resume{
     companyName?: string;//Optional-Company Associated with the Resume/Job
     jobTitle?: string;//optional-job Title associated with the resume
     ImagePath: string;//Path to the candidate's profile image
-    resumePath: string;//path to the actual resume file(PDF,DOCX,etc.)
+    resumePath: string;//path to the actual resume file(PDF.)
     feedback: feedback;//Detailed feedback after resume evaluation
 }
 

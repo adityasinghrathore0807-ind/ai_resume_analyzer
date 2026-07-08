@@ -161,7 +161,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect }) => {
                 <div className="flex items-center justify-between rounded-xl border border-green-200 bg-green-50 p-4 shadow">
                     <div className="flex items-center gap-3">
                         <img
-                            src="/icons/pdf.svg"
+                            src="public\icons\pdf.svg"
                             alt="PDF"
                             className="h-10 w-10"
                         />
