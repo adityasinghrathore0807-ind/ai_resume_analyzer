@@ -1,6 +1,6 @@
-#  Smart AI Resume Analyzer
+# Smart AI Resume Analyzer
 
-#     Screenshots
+#     Screenshots:-
 
 | Login | Home |
 |-------|------|
@@ -22,7 +22,7 @@ An AI-powered Resume Analyzer that evaluates resumes against job descriptions, g
 
 ##  Live Demo
 
-**Website:** https://airesumeanalyzerind.vercel.app
+**Website:** https://airesumeanalyzerin.vercel.app/
 
 ---
 
@@ -168,7 +168,7 @@ npm run dev
 Open your browser
 
 ```
-http://localhost:5174
+http://localhost:5175
 ```
 
 ---
